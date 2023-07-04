@@ -109,7 +109,8 @@ public class MainC {
 
         PrintService[] ps = PrintServiceLookup.lookupPrintServices(flavor, patts);
         if (ps.length == 0) {
-            throw new IllegalStateException("No Printer Found");
+            //throw new IllegalStateException("No Printer Found");
+            System.err.println("No Printer Found");
         }
         PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null,null);
         PrintService myService = null;
