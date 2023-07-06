@@ -5,13 +5,15 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javax.print.*;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Sides;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +26,11 @@ import java.util.Scanner;
 
 public class MainC {
     // Variables (UI elements)
-
+    public TextField gay_id;
+    @FXML
+    private Button adder;
+    @FXML
+    private Button confirm;
     @FXML
     private ListView<Object> preview;
     @FXML
@@ -36,15 +42,29 @@ public class MainC {
     @FXML
     private TextField total = new TextField();
     @FXML
+    private ChoiceBox<String> choice;
     Product[] inventory;
-    @FXML
-    private ChoiceBox<String> ch;
-    // Methods0
 
+    // Methods
+
+    /**
+     * Starter method.
+     * Creates folders, adds listeners, and changes default properties where needed
+     */
     public void initialize(){
-        System.out.println("App launched");
-        //reload_inventory();
+        // init
+        System.out.println("CaisseApp Launched Successfully!");
+        new File(".\\tickets").mkdirs();
+
         // The following TextFields only accept numbers
+        gay_id.textProperty().addListener(new ChangeListener<String>() {
+            public void changed(ObservableValue<? extends String> observable, String oldValue,
+                                String newValue) {
+                if (!newValue.matches("\\d*")) {
+                    unit_price.setText(newValue.replaceAll("\\D", ""));
+                }
+            }
+        });
         unit_price.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue,
@@ -63,7 +83,15 @@ public class MainC {
                 }
             }
         });
+
+        // Ignore the ListView while traversing the app with Tab
+        preview.setFocusTraversable(false);
     }
+    /**
+     * This method takes the info entered, and adds it as an element in the preview
+     * Along with it, it adds a button to delete it from the preview if needed
+     * Afterward, it cleans the UI by emptying the relevant TextFields, and sets focus back to data entry
+     */
     @FXML
     protected void addToReceipt() {
         if (!Objects.equals(product_name.getText(), "") && !Objects.equals(total.getText(), "")) {
@@ -87,7 +115,32 @@ public class MainC {
                 total.setText("");
             }
         }
+        // Go back to entering information
+        product_name.requestFocus();
     }
+
+    /**
+     * This method helps with navigating the app
+     * It gives to each entry point a follow-up, so that the process can be smoothed
+     * @param e defines an ActionEvent which is needed in order to trace which element called the method
+     */
+    @FXML
+    private void next(ActionEvent e){
+        String fid = ((TextField) e.getSource()).getId();
+        switch (fid) {
+            case "product_name" -> unit_price.requestFocus();
+            case "unit_price" -> quantity.requestFocus();
+            case "quantity" -> adder.requestFocus();
+            default -> {
+                product_name.requestFocus();
+            }
+        }
+    }
+
+    /**
+     * This method exists for a somewhat convenient UX
+     * It calculates the total for a given product on the fly, so the Total entry doesn't need to be manual
+     */
     @FXML
     private void setTotal(){
         if(!Objects.equals(unit_price.getText(), "") && !Objects.equals(quantity.getText(), "")){
@@ -97,6 +150,30 @@ public class MainC {
             total.setText(String.valueOf(c));
         } else total.setText("");
     }
+
+    /**
+     * This method helps with navigating the app
+     * It sets the focus on the printing button when entering Shift+Enter
+     * @param e defines a KeyEvent which is needed in order to trace which element called the method
+     */
+    @FXML
+    private void go_to_print(KeyEvent e){
+        if ((e.isShiftDown() && e.getCode()== KeyCode.ENTER) || (e.isControlDown() && e.getCode()==KeyCode.ENTER)){
+            confirm.requestFocus();
+        }
+    }
+
+    /**
+     * Pretty much this project's main piece
+     * This method connects the app to the printer, but only for the duration of the printing itself
+     * As such, it requires a bit of loading time at every call, but helps to clear exceptions should any arise
+     * The dedicated printer is defined in here
+     * For the context of this app, we use the POS-58 printer, but adding an option to add more printer would be good
+     * The content of the ticket is also defined here, and could possibly use its own method
+     * Finally, the call is made, and for development while the printer is unavailable,
+     * we can just output the ticket to the console directly
+     * The ticket is then saved, the UI cleaned, and focus back to data entry
+     */
     @FXML
     private void print(){
         // Total spent on buy
@@ -109,14 +186,16 @@ public class MainC {
 
         PrintService[] ps = PrintServiceLookup.lookupPrintServices(flavor, patts);
         if (ps.length == 0) {
-            //throw new IllegalStateException("No Printer Found");
+            //  throw new IllegalStateException("No Printer Found");
             System.err.println("No Printer Found");
         }
         PrintService[] printServices = PrintServiceLookup.lookupPrintServices(null,null);
         PrintService myService = null;
         for (PrintService p : printServices){
+
             //Get Printer Name
-            System.out.println(p.getName());
+            // Uncomment next line to display available printers
+            // System.out.println(p.getName());
             if(p.getName().equals("POS-58")){
                 myService = p;
                 break;
@@ -138,7 +217,12 @@ public class MainC {
         message.writeBytes(String.format("%-4s %s %4s%n", "|", "SEMI GROS, DETAILS ", "|").getBytes());
         message.writeBytes("------------------------------\n".getBytes());
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-        message.writeBytes(String.format("%-4s %s%n%n", "", dtf.format(LocalDateTime.now())).getBytes());
+        String time = dtf.format(LocalDateTime.now());
+        message.writeBytes(String.format("%-4s %s%n", "", time).getBytes());
+
+        if (!gay_id.getText().equals("")){
+            message.writeBytes(String.format("%-14s %s %n%n","      Client:", gay_id.getText()).getBytes());
+        }
 
         // Add headboard
         String headboard = String.format("%-9s %3s %6s %7s%n%n%n", "Produit", "Qte", "Prix", "Total");
@@ -172,13 +256,68 @@ public class MainC {
 
         // Launch Printer
         try {
+            // Uncomment next line to print ticket to printer
             job.print(doc, new HashPrintRequestAttributeSet());
+
+            // Uncomment next line to print ticket to console
             System.out.println(message);
+
+            // Save ticket to local storage
+            if(!save_ticket(message, time)){
+                Alert alert = new Alert(Alert.AlertType.ERROR, "ERREUR! Le ticket n'a pas été enregistré!");
+            }
+
+            // Clean up UI
             preview.getItems().removeAll(preview.getItems());
+            gay_id.setText("");
+            throw new PrintException();
         } catch (PrintException e) {
-            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "ERREUR! Veuillez signaler cette erreur à votre développeur");
+            alert.show();
+        } finally {
+            // Go back to entering information
+            product_name.requestFocus();
         }
     }
+
+    /**
+     * This method records every printed ticket in local storage
+     * It stores them in the 'tickets' folder, and sorts out the tickets with id into their dedicated folders
+     * @param msg is the content of the ticket, ready to be printed again
+     * @param date is the time at which the ticket was printed. This info is also recorded in the ticket itself
+     * @return whether the save was successful
+     */
+    private boolean save_ticket(ByteArrayOutputStream msg, String date){
+        try {
+            File saved;
+            if (gay_id.getText().equals("")){
+                saved = new File("tickets\\" + date.replace(" ", "_").replace(":","-") + ".txt");
+            }else{
+                new File(".\\tickets\\" + gay_id.getText()).mkdirs();
+                saved = new File("tickets\\" + gay_id.getText() + "\\" + date.replace(" ", "_").replace(":","-") + ".txt");
+            }
+            if (saved.createNewFile()){
+                try (FileWriter fw = new FileWriter(saved)){
+                    fw.write(msg.toString());
+                    return true;
+                } catch (IOException e){
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    // TODO
+
+    /**
+     * This method is a standby version of the 'print' function
+     * It serves in printing pre-recorded tickets
+     */
+    private void print_(){}
     @FXML
     private void createProduct(){
         if (product_name.getText().equals("")){
@@ -216,8 +355,8 @@ public class MainC {
                 String data = reader.nextLine();
                 String[] rel = data.split(" ");
                 inventory[curr] = new Product(rel[0], Integer.parseInt(rel[1]));
-                ch = new ChoiceBox<>();
-                ch.getItems().add(inventory[curr].name);
+                choice = new ChoiceBox<>();
+                choice.getItems().add(inventory[curr].name);
                 //System.out.println(ch.getItems().get(curr));
             }
         } catch (IOException e){

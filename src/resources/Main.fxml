@@ -6,20 +6,27 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="classes.MainC">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="490.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/20.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="classes.MainC">
    <children>
       <Label layoutX="36.0" layoutY="55.0" text="Produit" />
       <Label layoutX="24.0" layoutY="82.0" text="Prix unitaire" />
       <Label layoutX="32.0" layoutY="108.0" text="Quantité" />
-      <ListView fx:id="preview" layoutX="350.0" layoutY="18.0" prefHeight="275.0" prefWidth="200.0" />
+      <ListView fx:id="preview" layoutX="350.0" layoutY="82.0" prefHeight="275.0" prefWidth="200.0" />
       <Label layoutX="42.0" layoutY="134.0" text="Total" />
-      <TextField id="product_name" fx:id="product_name" layoutX="147.0" layoutY="51.0" />
-      <TextField id="unit_price" fx:id="unit_price" layoutX="147.0" layoutY="78.0" onKeyTyped="#setTotal" />
-      <TextField id="quantity" fx:id="quantity" layoutX="147.0" layoutY="104.0" onKeyTyped="#setTotal" />
+      <TextField id="product_name" fx:id="product_name" layoutX="147.0" layoutY="51.0" onAction="#next" onKeyReleased="#go_to_print" />
+      <TextField id="unit_price" fx:id="unit_price" layoutX="147.0" layoutY="78.0" onAction="#next" onKeyReleased="#go_to_print" onKeyTyped="#setTotal" />
+      <TextField id="quantity" fx:id="quantity" layoutX="147.0" layoutY="104.0" onAction="#next" onKeyReleased="#go_to_print" onKeyTyped="#setTotal" />
       <TextField id="total" fx:id="total" editable="false" layoutX="147.0" layoutY="130.0" />
       <Separator layoutX="297.0" layoutY="-8.0" orientation="VERTICAL" prefHeight="422.0" prefWidth="14.0" />
-      <Button layoutX="413.0" layoutY="324.0" mnemonicParsing="false" onAction="#print" text="IMPRIMER" />
-      <Button id="adder" layoutX="98.0" layoutY="311.0" mnemonicParsing="false" onAction="#addToReceipt" text="Ajouter au reçu" />
+      <Button id="adder" fx:id="adder" layoutX="98.0" layoutY="253.0" mnemonicParsing="false" onAction="#addToReceipt" text="Ajouter au reçu" />
+      <Button fx:id="confirm" layoutX="414.0" layoutY="401.0" mnemonicParsing="false" onAction="#print" text="IMPRIMER" />
+      <TextField fx:id="gay_id" layoutX="375.0" layoutY="38.0" onKeyReleased="#go_to_print" onAction="#next">
+         <font>
+            <Font name="System Bold Italic" size="12.0" />
+         </font>
+      </TextField>
+      <Label layoutX="427.0" layoutY="14.0" text="Client ID" />
    </children>
 </AnchorPane>
